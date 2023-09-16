@@ -26,6 +26,6 @@ jobs:
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
         file: esp32-server-with-cred.bin
-        asset_name: mything
+        asset_name: esp32-server
         tag: ${{ github.ref }}
         overwrite: true
