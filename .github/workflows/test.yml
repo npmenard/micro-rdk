@@ -8,6 +8,7 @@ on:
 
 jobs:
   changes:
+    if: github.repository == 'dontskip'
     name: Calculate changes
     runs-on: [x64, qemu-host]
     outputs:
