@@ -21,3 +21,11 @@ jobs:
     - name: Build release image
       run: |
         bash -c 'export MICRO_RDK_USE_NVS=true && . "$IDF_PATH"/export.sh && . "$ESP_ROOT"/export-esp.sh && make build-fake'
+    - name: Upload release binary
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: esp32-server-with-cred.bin
+        asset_name: mything
+        tag: ${{ github.ref }}
+        overwrite: true
