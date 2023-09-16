@@ -1,0 +1,21 @@
+name: publish
+
+on:
+  push:
+    tags:
+      - "*"
+
+jobs:
+  publish-release:
+    runs-on: [x64, qemu-host]
+    container:
+      image: ghcr.io/viamrobotics/micro-rdk-dev-env:amd64
+    needs: test_and_build
+    steps:
+    - name : Checkout main branch code
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 2
+    - name: Build release image
+      run: |
+        bash -c 'export MICRO_RDK_USE_NVS=true && . "$IDF_PATH"/export.sh && . "$ESP_ROOT"/export-esp.sh && make build-fake'
