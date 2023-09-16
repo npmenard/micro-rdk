@@ -6,7 +6,8 @@ on:
   pull_request:
     branches: ['main']
   push:
-    tags-ignore: ["**"]
+    tags-ignore:
+      - "*"
 
 jobs:
   faketest:
