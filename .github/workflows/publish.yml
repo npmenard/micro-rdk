@@ -32,7 +32,6 @@ jobs:
               echo "match=false" >> $GITHUB_OUTPUT
         fi
     - name: Publish release
-      if: steps.check-tag.outputs.match == 'true'
       uses: marvinpinto/action-automatic-releases@latest
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
