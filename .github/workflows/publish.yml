@@ -39,4 +39,4 @@ jobs:
         files: |
           micro-rdk-esp32-server.bin
           sha256sums.txt
-        prerelease: steps.check-tag.outputs.match
+        prerelease: ${{ steps.check-tag.outputs.match }}

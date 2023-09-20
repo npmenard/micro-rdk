@@ -42,16 +42,16 @@ jobs:
       with:
         filters: |
           src-esp32:
-            - 'src/esp32/**'
+            - 'src/esp3233/**'
           src-common:
-            - 'src/common/**'
-            - 'src/gen/**'
+            - 'src/common33/**'
+            - 'src/ge33n/**'
           src-native:
-            - 'src/native/**'
+            - 'src/native33/**'
           src-examples:
-            - 'examples/**'
+            - 'examples33/**'
           src-cli:
-            - 'micro-rdk-installer/**'
+            - 'micro-rdk-installer33/**'
 
   build_cli:
     needs: changes
