@@ -1,25 +1,25 @@
-name: License Finder
+# name: License Finder
 
-on:
-  workflow_dispatch:
-  workflow_call:
-  pull_request:
-    branches: ['main']
-  push:
+# on:
+#   workflow_dispatch:
+#   workflow_call:
+#   pull_request:
+#     branches: ['main']
+#   push:
 
-jobs:
-  license_finder:
-    name: Audit 3rd-Party Licenses
-    runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/viamrobotics/micro-rdk-dev-env:amd64
-    timeout-minutes: 10
+# jobs:
+#   license_finder:
+#     name: Audit 3rd-Party Licenses
+#     runs-on: ubuntu-latest
+#     container:
+#       image: ghcr.io/viamrobotics/micro-rdk-dev-env:amd64
+#     timeout-minutes: 10
 
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 2
+#     steps:
+#       - name: Check out code
+#         uses: actions/checkout@v3
+#         with:
+#           fetch-depth: 2
           
-      - name: Run license finder
-        run: license_finder
+#       - name: Run license finder
+#         run: license_finder
