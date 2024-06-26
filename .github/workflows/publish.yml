@@ -172,10 +172,12 @@ jobs:
         sha256sum  micro-rdk-lib.zip  >> sha256sums.txt
     - name: Update CHANGELOG
       id: changelog
-      uses: requarks/changelog-action@v1
+      uses: mikepenz/release-changelog-builder-action@v4
       with:
         token: ${{ github.token }}
         tag: ${{ github.ref_name }}
+        ignorePreReleases: "false"
+        fetchViaCommits: "true"
 
     - name: Publish release
       uses: ncipollo/release-action@v1
@@ -193,4 +195,4 @@ jobs:
         replacesArtifacts: true
         allowUpdates: true
         name: ${{ github.ref_name }}
-        body: ${{ steps.changelog.outputs.changes }}
+        body: ${{ steps.changelog.outputs.changelog }}
