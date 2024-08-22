@@ -9,7 +9,8 @@ use std::fmt::Debug;
 use std::pin::Pin;
 use std::time::Duration;
 
-pub struct ConfigMonitor<'a, S>
+#[derive(Clone)]
+pub struct ConfigMonitor<S>
 where
     S: RobotConfigurationStorage + WifiCredentialStorage + Clone + 'static,
     <S as RobotConfigurationStorage>::Error: Debug,
@@ -18,31 +19,30 @@ where
 {
     curr_config: ConfigResponse, //config for robot gotten from last robot startup, aka inputted from entry
     storage: S,
-    restart_hook: Option<Box<dyn FnOnce() + 'a>>,
+    restart_hook: fn() -> !,
 }
 
-impl<'a, S> ConfigMonitor<'a, S>
+impl<'a, S> ConfigMonitor<S>
 where
     S: RobotConfigurationStorage + WifiCredentialStorage + Clone + 'static,
     <S as RobotConfigurationStorage>::Error: Debug,
     ServerError: From<<S as RobotConfigurationStorage>::Error>,
     <S as WifiCredentialStorage>::Error: Sync + Send + 'static,
 {
-    pub fn new(curr_config: ConfigResponse, storage: S, restart_hook: impl FnOnce() + 'a) -> Self {
+    pub fn new(curr_config: ConfigResponse, storage: S, restart_hook: fn() -> !) -> Self {
         Self {
             curr_config,
             storage,
-            restart_hook: Some(Box::new(restart_hook)),
+            restart_hook,
         }
     }
 
     fn restart(&mut self) -> ! {
         log::warn!("Robot configuration change detected restarting micro-rdk");
-        (self.restart_hook.take().unwrap())();
-        unreachable!();
+        (self.restart_hook)();
     }
 }
-impl<'a, S> PeriodicAppClientTask for ConfigMonitor<'a, S>
+impl<S> PeriodicAppClientTask for ConfigMonitor<S>
 where
     S: RobotConfigurationStorage + WifiCredentialStorage + Clone + 'static,
     <S as RobotConfigurationStorage>::Error: Debug,

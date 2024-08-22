@@ -81,6 +81,7 @@ ringbuf.workspace = true
 pin-project.workspace = true
 async-lock.workspace = true
 dns-message-parser.workspace = true
+dyn-clone = {version = "1.0.17"}
 
 [build-dependencies]
 embuild.workspace = true

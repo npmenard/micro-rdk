@@ -40,7 +40,7 @@ use std::{
     net::Ipv4Addr,
     pin::Pin,
     rc::Rc,
-    sync::{Arc, Mutex},
+    sync::{atomic::AtomicBool, Arc, Mutex},
     task::Poll,
     time::Duration,
 };
@@ -387,18 +387,9 @@ where
             rpc_host,
         }
     }
-    pub async fn serve(&mut self, robot: Arc<Mutex<LocalRobot>>) {
-        let cloned_robot = robot.clone();
-
-        // Let the robot register any periodic app client tasks it may
-        // have based on its configuration.
-        self.app_client_tasks
-            .append(&mut robot.lock().unwrap().get_periodic_app_client_tasks());
-
-        // Convert each `PeriodicAppClientTask` implementer into an async task spawned on the
-        // executor, and collect them all into `_app_client_tasks` so we don't lose track of them.
-        let _app_client_tasks: Vec<_> = self
-            .app_client_tasks
+    pub fn start_periodic_tasks(&self) -> Vec<Task<()>> {
+        let mut cloned_task = self.app_client_tasks.clone();
+        cloned_task
             .drain(..)
             .map(|mut task| {
                 // Each task gets a handle to the `RwLock` wrapped `Option` that (might) contain an
@@ -432,22 +423,79 @@ where
                                 }
                             }
                         }
+                        log::info!("done running task task {:?}", task.name());
                     }
                 })
             })
-            .collect();
+            .collect()
+    }
+    pub async fn serve(&mut self, robot: Arc<Mutex<LocalRobot>>) {
+        let syncer = Arc::new(AtomicBool::new(false));
+        let s2 = syncer.clone();
+        let pin = unsafe { crate::esp32::esp_idf_svc::hal::gpio::Gpio0::new() };
+        let mut pin = crate::esp32::esp_idf_svc::hal::gpio::PinDriver::input(pin).unwrap();
+        pin.set_interrupt_type(crate::esp32::esp_idf_svc::hal::gpio::InterruptType::LowLevel)
+            .unwrap();
+        unsafe {
+            pin.subscribe(move || {
+                s2.store(true, std::sync::atomic::Ordering::Release);
+            })
+            .unwrap();
+        }
+        pin.enable_interrupt().unwrap();
+        std::mem::forget(pin);
+        let cloned_robot = robot.clone();
+
+        // Let the robot register any periodic app client tasks it may
+        // have based on its configuration.
+        self.app_client_tasks
+            .append(&mut robot.lock().unwrap().get_periodic_app_client_tasks());
+
+        let max_anticipated_grpc_clients = self.app_client_tasks.len() + 1;
+
+        // Convert each `PeriodicAppClientTask` implementer into an async task spawned on the
+        // executor, and collect them all into `_app_client_tasks` so we don't lose track of them.
+        let mut _app_client_tasks = self.start_periodic_tasks();
 
         loop {
             let _ = async_io::Timer::after(std::time::Duration::from_millis(300)).await;
             if !self.network.is_connected().unwrap_or(false) {
+                log::error!("network is assumed gone");
                 // the IP may change on reconnection (such as in the case where we are disconnected
                 // from a Wi-Fi base station), so we want to prompt the creation of a new
                 // app client
                 let _ = self.app_client.write().await.take();
+                log::error!("app cl is gone");
                 continue;
             }
             {
+                if syncer.load(std::sync::atomic::Ordering::Relaxed) {
+                    syncer.store(false, std::sync::atomic::Ordering::Release);
+                    let n = if let Some(app_client) = self.app_client.read().await.as_ref() {
+                        app_client.get_grpc_client_count()
+                    } else {
+                        0
+                    };
+                    log::info!(
+                        "in the gpio0 hndr ViamServer signaling flow has created grpc client clone {} of {}",
+                        n,
+                        max_anticipated_grpc_clients
+                    );
+                    log::error!("canceling all tasks will wait 3secs");
+                    _app_client_tasks.clear();
+                    let _ = Timer::after(Duration::from_secs(3)).await;
+                    log::error!("Killing the app client");
+                    let _ = self.app_client.write().await.take();
+                    log::error!("re-creating tasks");
+                    let mut task = self.start_periodic_tasks();
+                    task.into_iter().for_each(|t| _app_client_tasks.push(t));
+                    log::error!("all done");
+                }
+
+                log::info!("aatempt up read {:?}", self.app_client);
                 let urguard = self.app_client.upgradable_read().await;
+                log::info!("up read");
+
                 if urguard.is_none() {
                     let conn = match self.app_connector.connect().await {
                         Ok(conn) => conn,
@@ -470,8 +518,15 @@ where
                     let _ = AsyncRwLockUpgradableReadGuard::upgrade(urguard)
                         .await
                         .insert(app_client);
+                } else {
+                    log::info!(
+                        "ViamServer signaling flow has created grpc client clone {} of {}",
+                        urguard.as_ref().unwrap().get_grpc_client_count(),
+                        max_anticipated_grpc_clients
+                    );
                 }
             }
+            log::info!("will run sig");
             let sig = if let Some(webrtc_config) = self.webrtc_config.as_ref() {
                 let ip = self.network.get_ip();
                 let rguard = self.app_client.read().await;

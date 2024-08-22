@@ -102,6 +102,7 @@ pub type StoreRegion = Rc<LocalRb<u8, &'static mut [MaybeUninit<u8>]>>;
 /// the maximum allowed size of a single message (computed as the length of DATA_STORE divided by
 /// the number of collector keys). It should be treated as a global struct that should only be initialized once
 /// and is not thread-safe (all interactions should be blocking).
+#[derive(Clone)]
 pub struct StaticMemoryDataStore {
     buffers: Vec<StoreRegion>,
     buffer_usages: Vec<Rc<AtomicBool>>,

@@ -294,6 +294,7 @@ pub enum DataSyncError {
     NoCurrentTime,
 }
 
+#[derive(Clone)]
 pub struct DataSyncTask<StoreType> {
     store: Rc<AsyncMutex<StoreType>>,
     resource_method_keys: Vec<ResourceMethodKey>,
@@ -306,7 +307,7 @@ pub struct DataSyncTask<StoreType> {
 
 impl<StoreType> DataSyncTask<StoreType>
 where
-    StoreType: DataStore,
+    StoreType: DataStore + Clone,
 {
     #[cfg(test)]
     async fn get_store_lock(&mut self) -> futures_util::lock::MutexGuard<StoreType> {
@@ -522,7 +523,7 @@ where
 
 impl<StoreType> PeriodicAppClientTask for DataSyncTask<StoreType>
 where
-    StoreType: DataStore,
+    StoreType: DataStore + Clone,
 {
     fn name(&self) -> &str {
         "DataSync"

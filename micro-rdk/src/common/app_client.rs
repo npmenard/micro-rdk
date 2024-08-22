@@ -1,12 +1,15 @@
 #![allow(unused)]
 use bytes::{BufMut, Bytes, BytesMut};
 use chrono::{format::ParseError, DateTime, FixedOffset};
+use dyn_clone::DynClone;
 use futures_lite::{Future, StreamExt};
 use http_body_util::BodyExt;
 use http_body_util::Full;
 use http_body_util::StreamBody;
 use hyper::body::Frame;
+use hyper::header::HeaderValue;
 use prost::{DecodeError, EncodeError, Message};
+use std::fmt::Debug;
 use std::{
     net::Ipv4Addr,
     pin::Pin,
@@ -149,6 +152,14 @@ pub struct AppClient {
     grpc_client: Rc<GrpcClient>,
 }
 
+impl Debug for AppClient {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("AppClient")
+            .field("RC cnt", &Rc::strong_count(&self.grpc_client))
+            .finish()
+    }
+}
+
 pub(crate) struct AppSignaling(
     pub(crate) GrpcMessageSender<AnswerResponse>,
     pub(crate) GrpcMessageStream<AnswerRequest>,
@@ -188,9 +199,19 @@ impl AppClient {
         );
 
         let grpc_client = self.grpc_client.clone();
+        let mut r = r.unwrap();
+        let _ = r.headers_mut().remove("user-agent");
+        let _ = r.headers_mut().append(
+            "user-agent",
+            HeaderValue::from_str(&format!(
+                "esp32-sc-count-{}",
+                Rc::strong_count(&grpc_client)
+            ))
+            .unwrap(),
+        );
         async move {
             let (tx, rx) = grpc_client
-                .send_request_bidi::<AnswerResponse, AnswerRequest>(r?, sender)
+                .send_request_bidi::<AnswerResponse, AnswerRequest>(r, sender)
                 .await
                 .map_err(AppClientError::AppGrpcClientError)?;
             Ok(AppSignaling(tx, rx))
@@ -223,7 +244,7 @@ impl AppClient {
         };
         let body = encode_request(req)?;
 
-        let r = self
+        let mut r = self
             .grpc_client
             .build_request(
                 "/viam.app.v1.RobotService/Config",
@@ -232,7 +253,15 @@ impl AppClient {
                 BodyExt::boxed(Full::new(body).map_err(|never| match never {})),
             )
             .map_err(AppClientError::AppGrpcClientError)?;
-
+        let _ = r.headers_mut().remove("user-agent");
+        let _ = r.headers_mut().append(
+            "user-agent",
+            HeaderValue::from_str(&format!(
+                "esp32-sc-count-{}",
+                self.get_grpc_client_count()
+            ))
+            .unwrap(),
+        );
         let (mut r, headers) = self.grpc_client.send_request(r).await?;
 
         let datetime = if let Some(date_val) = headers.get("date") {
@@ -276,7 +305,7 @@ impl AppClient {
         data_req: DataCaptureUploadRequest,
     ) -> Result<(), AppClientError> {
         let body = encode_request(data_req)?;
-        let r = self
+        let mut r = self
             .grpc_client
             .build_request(
                 "/viam.app.datasync.v1.DataSyncService/DataCaptureUpload",
@@ -285,6 +314,15 @@ impl AppClient {
                 BodyExt::boxed(Full::new(body).map_err(|never| match never {})),
             )
             .map_err(AppClientError::AppGrpcClientError)?;
+        let _ = r.headers_mut().remove("user-agent");
+        let _ = r.headers_mut().append(
+            "user-agent",
+            HeaderValue::from_str(&format!(
+                "esp32-sc-count-{}",
+                self.get_grpc_client_count()
+            ))
+            .unwrap(),
+        );
         self.grpc_client.send_request(r).await?;
 
         Ok(())
@@ -298,7 +336,7 @@ impl AppClient {
             id: self.robot_credentials.robot_id.clone(),
         };
         let body = encode_request(req)?;
-        let r = self
+        let mut r = self
             .grpc_client
             .build_request(
                 "/viam.app.v1.RobotService/NeedsRestart",
@@ -307,6 +345,15 @@ impl AppClient {
                 BodyExt::boxed(Full::new(body).map_err(|never| match never {})),
             )
             .map_err(AppClientError::AppGrpcClientError)?;
+        let _ = r.headers_mut().remove("user-agent");
+        let _ = r.headers_mut().append(
+            "user-agent",
+            HeaderValue::from_str(&format!(
+                "esp32-sc-count-{}",
+                self.get_grpc_client_count()
+            ))
+            .unwrap(),
+        );
         let (mut response, headers_) = self.grpc_client.send_request(r).await?;
         let response = NeedsRestartResponse::decode(response.split_off(5))?;
 
@@ -327,6 +374,13 @@ impl AppClient {
             },
         })
     }
+
+    /// Returns the strong count of the AppClient's internal
+    /// gRPC client, serving as a rough proxy for the number of
+    /// concurrent tasks using this app client.
+    pub(crate) fn get_grpc_client_count(&self) -> usize {
+        Rc::strong_count(&self.grpc_client)
+    }
 }
 
 impl Drop for AppClient {
@@ -338,7 +392,7 @@ impl Drop for AppClient {
 /// An object-safe trait for use with `ViamServerBuilder::with_periodic_app_client_task`. An object
 /// implementing this trait represents a periodic activity to be performed against an `AppClient`,
 /// such as checking for restarts or uploading cached data to the data service.
-pub trait PeriodicAppClientTask {
+pub trait PeriodicAppClientTask: DynClone {
     /// Returns the name of this task, primarily for inclusion in error messages or logging.
     fn name(&self) -> &str;
 
@@ -354,3 +408,5 @@ pub trait PeriodicAppClientTask {
         app_client: &'b AppClient,
     ) -> Pin<Box<dyn Future<Output = Result<Option<Duration>, AppClientError>> + 'b>>;
 }
+
+dyn_clone::clone_trait_object!(PeriodicAppClientTask);

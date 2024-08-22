@@ -3,25 +3,23 @@ use futures_lite::Future;
 use std::pin::Pin;
 use std::time::Duration;
 
-pub struct RestartMonitor<'a> {
-    restart_hook: Option<Box<dyn FnOnce() + 'a>>,
+#[derive(Clone)]
+pub struct RestartMonitor {
+    restart_hook: fn() -> !,
 }
 
-impl<'a> RestartMonitor<'a> {
-    pub fn new(restart_hook: impl FnOnce() + 'a) -> Self {
-        Self {
-            restart_hook: Some(Box::new(restart_hook)),
-        }
+impl<'a> RestartMonitor {
+    pub fn new(restart_hook: fn() -> !) -> Self {
+        Self { restart_hook }
     }
 
     fn restart(&mut self) -> ! {
         log::warn!("Restart request received - restarting or terminating now...");
-        (self.restart_hook.take().unwrap())();
-        unreachable!();
+        (self.restart_hook)();
     }
 }
 
-impl<'a> PeriodicAppClientTask for RestartMonitor<'a> {
+impl<'a> PeriodicAppClientTask for RestartMonitor {
     fn name(&self) -> &str {
         "RestartMonitor"
     }
