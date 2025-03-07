@@ -29,7 +29,7 @@ pub struct Coredump {
 
 pub(crate) fn register_models(registry: &mut ComponentRegistry) {
     if registry
-        .register_sensor("coredump", &Coredump::from_config)
+        .register_sensor("coredump ", &Coredump::from_config)
         .is_err()
     {
         log::error!("couldn't register coredump sensor");
