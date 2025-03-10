@@ -18,6 +18,7 @@ on:
 jobs:
   other:
     runs-on: ubuntu-latest
+    changes: ${{ fromJSON(inputs.input) }}
     steps:
     - name: Check
       run: |
@@ -29,6 +30,11 @@ jobs:
           echo 'github.event.inputs.output: ${{ github.event.inputs.output }}'
           echo '```'
         } | tee -a "$GITHUB_STEP_SUMMARY"
+    - name: Dump GitHub context
+      env:
+        GITHUB_CONTEXT: ${{ changes }}
+      run: |
+        echo "$GITHUB_CONTEXT"
   size-storage:
     name: Store New functions size
     runs-on: ubuntu-latest

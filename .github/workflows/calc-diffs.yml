@@ -22,7 +22,7 @@ jobs:
       src-servers: ${{ steps.filter.outputs.src-servers }}
       src-cli: ${{ steps.filter.outputs.src-cli }}
       src-ffi: ${{ steps.filter.outputs.src-ffi }}
-      src-nmea: ${{ steps.filtser.outputs.src-nmea }}
+      src-nmea: ${{ steps.filter.outputs.src-nmea }}
     steps:
     - name : Checkout main branch code
       if: github.event_name != 'pull_request_target'
