@@ -4,8 +4,8 @@ on:
   workflow_run:
     workflows:
       - Test
-    #branches:
-    #  - 'test-workflow'
+    branches:
+      - 'test-workflow'
     types:
       - completed
 
