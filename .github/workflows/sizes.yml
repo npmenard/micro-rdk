@@ -1,6 +1,12 @@
 name: Size Changes
 
 on:
+  workflow_call:
+    inputs:
+      input:
+        description: 'input'
+        required: true
+        type: string
   workflow_run:
     workflows:
       - Test
@@ -10,6 +16,19 @@ on:
       - completed
 
 jobs:
+  other:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check
+      run: |
+        {
+          echo '```yml'
+          echo 'inputs.input: ${{ inputs.input }}'
+          echo 'inputs.output: ${{ inputs.output }}'
+          echo 'github.event.inputs.input: ${{ github.event.inputs.input }}'
+          echo 'github.event.inputs.output: ${{ github.event.inputs.output }}'
+          echo '```'
+        } | tee -a "$GITHUB_STEP_SUMMARY"
   size-storage:
     name: Store New functions size
     runs-on: ubuntu-latest
