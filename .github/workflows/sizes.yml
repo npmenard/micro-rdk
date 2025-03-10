@@ -2,7 +2,7 @@ name: Size Changes
 
 on:
   workflow_run:
-    workflows: ["Tests, Format, Clippy Micro-Rdk"]
+    workflows: ["Test"]
     branches:
       - 'test-workflow'
     types:
@@ -12,11 +12,16 @@ jobs:
   size-storage:
     name: Store New functions size
     runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/viamrobotics/micro-rdk-dev-env:amd64
+    #container:
+    #  image: ghcr.io/viamrobotics/micro-rdk-dev-env:amd64
     timeout-minutes: 20
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
+    - name: Dump GitHub context
+      env:
+        GITHUB_CONTEXT: ${{ toJson(github) }}
+      run: |
+        echo "$GITHUB_CONTEXT"
     - name : Checkout main branch code
       if: github.event_name != 'pull_request_target'
       uses: actions/checkout@v4
