@@ -3,7 +3,7 @@ name: Size Changes
 on:
   workflow_run:
     workflows:
-      - 'Calculate changes'
+      - Test
     branches:
       - 'test-workflow'
     types:
