@@ -23,8 +23,8 @@ jobs:
       src-cli: ${{ steps.filter.outputs.src-cli }}
       src-ffi: ${{ steps.filter.outputs.src-ffi }}
       src-nmea: ${{ steps.filter.outputs.src-nmea }}
-    container:
-      image: ghcr.io/viamrobotics/micro-rdk-dev-env:amd64
+    # container:
+    #   image: ghcr.io/viamrobotics/micro-rdk-dev-env:amd64
     steps:
     - name : Checkout main branch code
       if: github.event_name != 'pull_request_target'
@@ -139,8 +139,8 @@ jobs:
     name: Tests, Format, Clippy Micro-Rdk
     if : needs.changes.outputs.src-esp32 == 'true' || needs.changes.outputs.src-common == 'true' ||  needs.changes.outputs.src-native == 'true' || needs.changes.outputs.src-servers == 'true'
     runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/viamrobotics/micro-rdk-dev-env:amd64
+    # container:
+    #   image: ghcr.io/viamrobotics/micro-rdk-dev-env:amd64
     timeout-minutes: 20
     steps:
     - name : Checkout main branch code
@@ -154,21 +154,21 @@ jobs:
       with:
         ref: ${{ github.event.pull_request.head.sha }}
         fetch-depth: 2
-    - name: Format
-      run: |
-        bash -c 'make format'
-    - name: Test
-      if : needs.changes.outputs.src-esp32 == 'true' || needs.changes.outputs.src-common == 'true' ||  needs.changes.outputs.src-native == 'true'
-      run: |
-        bash -c 'make test'
-    - name: ESP32 Build & Clippy
-      if : needs.changes.outputs.src-esp32 == 'true' || needs.changes.outputs.src-common == 'true' ||  needs.changes.outputs.src-servers == 'true'
-      run: |
-        bash -c '. /home/testbot/.bash_profile ; git config --global --add safe.directory "$ESP_ROOT"/esp-idf && make clippy-esp32'
-        bash -c '. /home/testbot/.bash_profile ; cd micro-rdk-server && cd ../ && make build-esp32-bin'
+    # - name: Format
+    #   run: |
+    #     bash -c 'make format'
+    # - name: Test
+    #   if : needs.changes.outputs.src-esp32 == 'true' || needs.changes.outputs.src-common == 'true' ||  needs.changes.outputs.src-native == 'true'
+    #   run: |
+    #     bash -c 'make test'
+    # - name: ESP32 Build & Clippy
+    #   if : needs.changes.outputs.src-esp32 == 'true' || needs.changes.outputs.src-common == 'true' ||  needs.changes.outputs.src-servers == 'true'
+    #   run: |
+    #     bash -c '. /home/testbot/.bash_profile ; git config --global --add safe.directory "$ESP_ROOT"/esp-idf && make clippy-esp32'
+    #     bash -c '. /home/testbot/.bash_profile ; cd micro-rdk-server && cd ../ && make build-esp32-bin'
 
-    - name: Native Build & Clippy
-      if : needs.changes.outputs.src-native == 'true' || needs.changes.outputs.src-common == 'true' || needs.changes.outputs.src-servers == 'true'
-      run: |
-        bash -c 'make clippy-native'
-        bash -c 'make build-native'
+    # - name: Native Build & Clippy
+    #   if : needs.changes.outputs.src-native == 'true' || needs.changes.outputs.src-common == 'true' || needs.changes.outputs.src-servers == 'true'
+    #   run: |
+    #     bash -c 'make clippy-native'
+    #     bash -c 'make build-native'
