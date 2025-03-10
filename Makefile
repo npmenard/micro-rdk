@@ -157,3 +157,6 @@ canon-upload-arm64:
 	docker tag $(IMAGE_BASE):arm64 $(IMAGE_BASE):arm64_$(DATE)
 	docker push $(IMAGE_BASE):arm64
 	docker push $(IMAGE_BASE):arm64_$(DATE)
+
+make-size-summary:
+	RUSTFLAGS="--emit=llvm-ir --cfg espidf_time32 -C default-linker-libraries"  cargo +esp bloat -p micro-rdk-server --bin micro-rdk-server-esp32 --target=xtensa-esp32-espidf -Zbuild-std=std,panic_abort --release --symbols-section .flash.text -w --message-format json -n 0
