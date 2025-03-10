@@ -12,7 +12,7 @@ jobs:
     needs: ['Tests, Format, Clippy Micro-Rdk']
     container:
       image: ghcr.io/viamrobotics/micro-rdk-dev-env:amd64
-      timeout-minutes: 20
+    timeout-minutes: 20
     steps:
     - name : Checkout main branch code
       if: github.event_name != 'pull_request_target'
