@@ -2,9 +2,10 @@ name: Size Changes
 
 on:
   workflow_run:
-    workflows: ["Test"]
-    branches:
-      - 'test-workflow'
+    workflows:
+      - Test
+    #branches:
+    #  - 'test-workflow'
     types:
       - completed
 
