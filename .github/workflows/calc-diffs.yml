@@ -71,5 +71,5 @@ jobs:
     needs: [changes]
     uses: ./.github/workflows/sizes.yml
     with:
-      input: ${{ needs.changes.changes}}
+      input: ${{ needs.changes}}
 
