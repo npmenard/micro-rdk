@@ -20,7 +20,7 @@ jobs:
     steps:
     - name: Dump GitHub context
       env:
-        GITHUB_CONTEXT: ${{ toJson(github.event.workflow_run) }}
+        GITHUB_CONTEXT: ${{ toJson(github.event.workflow_run.jobs) }}
       run: |
         echo "$GITHUB_CONTEXT"
     - name : Checkout main branch code
