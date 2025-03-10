@@ -28,8 +28,7 @@ jobs:
       with:
         script: |
           console.log(context)
-          console.log(github.event.workflow_run)
-          const diff_url = github.event.workflow_run.jobs_url
+          const diff_url = context.payload.workflow_run.jobs_url
           const result = await github.request(diff_url)
           console.log(result)
     - name : Checkout main branch code
