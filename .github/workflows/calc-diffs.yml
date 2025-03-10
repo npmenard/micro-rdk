@@ -61,11 +61,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: [changes]
     steps:
-      -name "export"
-      env:
-        GITHUB_CONTEXT: ${{ toJson(needs.changes) }}
-      run: |
-        echo "$GITHUB_CONTEXT"
+      - name: export
+        env:
+          GITHUB_CONTEXT: ${{ toJson(needs.changes) }}
+        run: |
+          echo "$GITHUB_CONTEXT"
   export:
     name: Export
     needs: [changes]
