@@ -3,6 +3,7 @@ use async_executor::Task;
 use async_io::{Async, Timer};
 use either::Either;
 
+use esp_idf_svc::sys::{esp_task_wdt_config_t, CONFIG_FREERTOS_NUMBER_OF_CORES};
 use futures_lite::{FutureExt, StreamExt};
 use futures_util::stream::FuturesUnordered;
 use futures_util::TryFutureExt;
@@ -433,12 +434,16 @@ where
         {
             // set the TWDT to expire after 3 minutes
             crate::esp32::esp_idf_svc::sys::esp!(unsafe {
-                // TODO(RSDK-10195): This should now take an esp_task_wdt_config_t
-                crate::esp32::esp_idf_svc::sys::esp_task_wdt_init(180, true)
+                let wdt_config = esp_task_wdt_config_t {
+                    timeout_ms: 180 * 1000, // 180 s to ms
+                    idle_core_mask: (1 << CONFIG_FREERTOS_NUMBER_OF_CORES) - 1,
+                    trigger_panic: true,
+                };
+                crate::esp32::esp_idf_svc::sys::esp_task_wdt_init(&wdt_config)
             })
             .unwrap();
 
-            // Register the current task on the TWDT. The TWDT runs in the IDLE Task.
+            // register the current task on the TWDT. The TWDT runs in the IDLE Task.
             crate::esp32::esp_idf_svc::sys::esp!(unsafe {
                 crate::esp32::esp_idf_svc::sys::esp_task_wdt_add(
                     crate::esp32::esp_idf_svc::sys::xTaskGetCurrentTaskHandle(),
