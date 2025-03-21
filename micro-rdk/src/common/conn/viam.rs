@@ -419,6 +419,7 @@ where
     pub fn run_forever(&mut self) -> ! {
         #[cfg(feature = "esp32")]
         {
+            use esp_idf_svc::sys::{esp_task_wdt_config_t, CONFIG_FREERTOS_NUMBER_OF_CORES};
             // set the TWDT to expire after 3 minutes
             crate::esp32::esp_idf_svc::sys::esp!(unsafe {
                 let wdt_config = esp_task_wdt_config_t {
