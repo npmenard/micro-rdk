@@ -36,6 +36,9 @@ opt-level = "z"
 debug = true
 opt-level = "z"
 
+[patch.crates-io]
+esp-idf-svc = { git = "https://github.com/npmenard/esp-idf-svc.git" }
+
 [workspace.dependencies]
 anyhow = "1.0.94"
 async-channel = "2"
