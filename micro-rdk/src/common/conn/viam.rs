@@ -450,6 +450,10 @@ where
                     loop {
                         Timer::after(Duration::from_secs(90)).await;
                         unsafe { crate::esp32::esp_idf_svc::sys::esp_task_wdt_reset() };
+                        log::info!(
+                            "time of day has been set to to {}",
+                            chrono::Local::now().fixed_offset()
+                        );
                     }
                 })
                 .detach();
